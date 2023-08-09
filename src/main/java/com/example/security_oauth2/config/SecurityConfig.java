@@ -28,8 +28,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     /**
      * 自定义用户认证逻辑
      */
-    @Autowired
-    private UserDetailsService userDetailsService;
+//    @Autowired
+//    private UserDetailsService userDetailsService;
 
     /**
      * 认证失败处理类
@@ -60,7 +60,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /**
-     * 强散列哈希加密实现
+     * 强散列哈希加密实现 动态加盐
      */
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -79,7 +79,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         UserInfo userInfo = new UserInfo();
         auth.inMemoryAuthentication()
                 .withUser(userInfo.getUserName())
-                .password("{noop}" + userInfo.getPassWord())
+                .password("{noop}" + userInfo.getPassWord())//{noop}非加密的方式
                 .roles(userInfo.getRole());
 
         //在这里关联数据库和security
@@ -135,30 +135,30 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // 关闭跨域保护;
                 .and().csrf().disable();
 
-        http
-                // CSRF禁用，因为不使用session
-                .csrf().disable()
-                // 认证失败处理类
-//                .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
-                // 基于token，所以不需要session
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                // 过滤请求
-                .authorizeRequests()
-                // 对于登录login 验证码captchaImage 允许匿名访问
-                .antMatchers("/login", "/captchaImage").anonymous()
-                .antMatchers(
-                        HttpMethod.GET,
-                        "/*.html",
-                        "/**/*.html",
-                        "/**/*.css",
-                        "/**/*.js"
-                ).permitAll()
-                .antMatchers("/**").permitAll()
-                // 除上面外的所有请求全部需要鉴权认证
-                .anyRequest().authenticated()
-                .and()
-                //将安全标头添加到响应,比如说简单的 XSS 保护
-                .headers().frameOptions().disable();
+//        http
+//                // CSRF禁用，因为不使用session
+//                .csrf().disable()
+//                // 认证失败处理类
+////                .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
+//                // 基于token，所以不需要session
+//                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+//                // 过滤请求
+//                .authorizeRequests()
+//                // 对于登录login 验证码captchaImage 允许匿名访问
+//                .antMatchers("/login", "/captchaImage").anonymous()
+//                .antMatchers(
+//                        HttpMethod.GET,
+//                        "/*.html",
+//                        "/**/*.html",
+//                        "/**/*.css",
+//                        "/**/*.js"
+//                ).permitAll()
+//                .antMatchers("/**").permitAll()
+//                // 除上面外的所有请求全部需要鉴权认证
+//                .anyRequest().authenticated()
+//                .and()
+//                //将安全标头添加到响应,比如说简单的 XSS 保护
+//                .headers().frameOptions().disable();
 //        http.logout().logoutUrl("/logout").logoutSuccessHandler(logoutSuccessHandler);
         // 添加JWT filter
 //        http.addFilterBefore(authenticationTokenFilter, UsernamePasswordAuthenticationFilter.class);
