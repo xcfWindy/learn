@@ -1,5 +1,6 @@
 package com.example.security_oauth2.AuthorizationServer;
 
+import com.example.security_oauth2.CheckToken.MyUserAuthenticationConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -8,6 +9,7 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.A
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
 
 /**
@@ -38,6 +40,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
     /**
      * 令牌端点的安全约束:endpoint可以定义一些安全上的约束等
+     * 对应于配置AuthorizationServer安全认证的相关信息，创建ClientCredentialsTokenEndpointFilter核心过滤器
      */
     @Override
     public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
@@ -46,7 +49,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
                 .tokenKeyAccess("isAuthenticated()")
                 //开启/oauth/check_token验证端口认证权限访问
                 .checkTokenAccess("isAuthenticated()")
-                //允许表单认证
+                //允许表单认证 让/oauth/token支持client_id以及client_secret作登录认证
                 .allowFormAuthenticationForClients();
 
     }
@@ -54,6 +57,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
     /**
      * 客户端配置：这里我们先使用内存的方式构造死数据进行入门，后续我们需要从数据库中读取客户端信息
+     * 配置OAuth2的客户端相关信息
      */
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
@@ -82,12 +86,18 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
     /**
      * 配置令牌访问端点:定义token的相关endpoint，以及token如何存取，以及客户端支持哪些类型的token
+     * 配置身份认证器，配置认证方式，TokenStore，TokenGranter，OAuth2RequestFactory
      */
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+
+
+        DefaultAccessTokenConverter defaultAccessTokenConverter=new DefaultAccessTokenConverter();
+        defaultAccessTokenConverter.setUserTokenConverter(new MyUserAuthenticationConverter());
         endpoints
                 //密码模式需要配置注入的authenticationManager，后续深入在解释为什么需要注入这个
                 .authenticationManager(authenticationManager)
+                .accessTokenConverter(defaultAccessTokenConverter)
                 //token，这里目前我们简单使用内存的方式
                 .tokenStore(new InMemoryTokenStore());
     }
