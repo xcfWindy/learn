@@ -1,6 +1,8 @@
 package com.example.security_oauth2.AuthorizationServer;
 
 import com.example.security_oauth2.CheckToken.MyUserAuthenticationConverter;
+import com.example.security_oauth2.MyAbstractTokenGranter.MyTokenGranter;
+import com.example.security_oauth2.UserDetailService.MyUserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -9,8 +11,14 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.A
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.CompositeTokenGranter;
+import org.springframework.security.oauth2.provider.TokenGranter;
 import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * 搭建授权服务器
@@ -36,6 +44,12 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
      */
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private MyUserDetailService myUserDetailService;
+
+//    @Autowired
+//    private RedisTemplate<String,String> redisTemplate;
 
 
     /**
@@ -97,9 +111,33 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
         endpoints
                 //密码模式需要配置注入的authenticationManager，后续深入在解释为什么需要注入这个
                 .authenticationManager(authenticationManager)
-                .accessTokenConverter(defaultAccessTokenConverter)
+//                .accessTokenConverter(defaultAccessTokenConverter)
+                //将自定义的认证模式加入到配置中
+                .tokenGranter(tokenGranter(endpoints))
                 //token，这里目前我们简单使用内存的方式
                 .tokenStore(new InMemoryTokenStore());
     }
+
+    /**
+     * 添加自定义授权类型
+     *
+     * @return List<TokenGranter>
+     */
+    private TokenGranter tokenGranter(AuthorizationServerEndpointsConfigurer endpoints) {
+
+        // endpoints.getTokenGranter() 获取SpringSecurity OAuth2.0 现有的授权类型
+        List<TokenGranter> granters = new ArrayList<TokenGranter>(Collections.singletonList(endpoints.getTokenGranter()));
+
+        // 构建短信验证授权类型
+        MyTokenGranter myTokenGranter = new MyTokenGranter(endpoints.getTokenServices(), endpoints.getClientDetailsService(),
+                endpoints.getOAuth2RequestFactory(),myUserDetailService
+                //,redisTemplate
+        );
+        // 向集合中添加短信授权类型
+        granters.add(myTokenGranter);
+        // 返回所有类型
+        return new CompositeTokenGranter(granters);
+    }
+
 
 }

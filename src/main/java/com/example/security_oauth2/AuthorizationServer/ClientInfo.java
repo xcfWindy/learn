@@ -21,5 +21,5 @@ public class ClientInfo {
     /**flush_token有效期*/
     private int flushTokenValid = 60*30*4;
     /**授权模式:授权码模式，简化模式，密码模式，客户端模式*/
-    private String [] grantTypes= {"authorization_code","implicit","password","client_credentials"};
+    private String [] grantTypes= {"authorization_code","implicit","password","client_credentials","my_type"};
 }

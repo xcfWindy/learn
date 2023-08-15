@@ -62,11 +62,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     /**
      * 强散列哈希加密实现 动态加盐
      */
-    @Bean
-    public BCryptPasswordEncoder bCryptPasswordEncoder() {
-
-        return new BCryptPasswordEncoder();
-    }
+//    @Bean
+//    public BCryptPasswordEncoder bCryptPasswordEncoder() {
+//
+//        return new BCryptPasswordEncoder();
+//    }
 
     /**
      * 认证管理器配置方法
@@ -96,9 +96,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Override
     public void configure(WebSecurity web) throws Exception {
-        super.configure(web);
-        //解决静态资源被拦截的问题
-        web.ignoring();
+//        super.configure(web);
+//        //解决静态资源被拦截的问题
+//        web.ignoring();
     }
 
     /**
