@@ -3,6 +3,7 @@ package com.example.security_oauth2.AuthorizationServer;
 import cn.hutool.core.util.StrUtil;
 import com.example.security_oauth2.CheckToken.MyUserAuthenticationConverter;
 import com.example.security_oauth2.MyAbstractTokenGranter.MyTokenGranter;
+import com.example.security_oauth2.MyAuthentication.MyGranter;
 import com.example.security_oauth2.TokenStoreConfig.MyAuthenticationKeyGenerator;
 import com.example.security_oauth2.UserDetailService.MyUserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -145,8 +146,12 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
                 endpoints.getOAuth2RequestFactory(),myUserDetailService
                 //,redisTemplate
         );
+
+        MyGranter myGranter = new MyGranter(authenticationManager,endpoints.getTokenServices(), endpoints.getClientDetailsService(),
+                endpoints.getOAuth2RequestFactory());
         // 向集合中添加短信授权类型
         granters.add(myTokenGranter);
+        granters.add(myGranter);
         // 返回所有类型
         return new CompositeTokenGranter(granters);
     }

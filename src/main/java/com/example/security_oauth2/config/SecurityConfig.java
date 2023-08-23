@@ -1,5 +1,6 @@
 package com.example.security_oauth2.config;
 
+import com.example.security_oauth2.MyAuthentication.MobileSecurityConfigurer;
 import com.example.security_oauth2.ResourceOwner.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -18,7 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 
 /**
- * spring security配置
+ * spring security配置 认证相关配置
  */
 @Order(1)
 @EnableWebSecurity
@@ -133,7 +134,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // 其余所有请求全部需要鉴权认证
                 .anyRequest().authenticated()
                 // 关闭跨域保护;
-                .and().csrf().disable();
+                .and().csrf().disable()
+                .apply(mobileSecurityConfigurer());
 
 //        http
 //                // CSRF禁用，因为不使用session
@@ -166,5 +168,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //        http.addFilterBefore(corsFilter, JwtAuthenticationTokenFilter.class);
 //        http.addFilterBefore(corsFilter, LogoutFilter.class);
 
+    }
+
+    /**
+     * 注入自定义手机号登录配置入口
+     */
+    @Bean
+    public MobileSecurityConfigurer mobileSecurityConfigurer() {
+        return new MobileSecurityConfigurer();
     }
 }
