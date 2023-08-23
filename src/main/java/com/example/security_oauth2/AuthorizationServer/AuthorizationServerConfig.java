@@ -1,10 +1,14 @@
 package com.example.security_oauth2.AuthorizationServer;
 
+import cn.hutool.core.util.StrUtil;
 import com.example.security_oauth2.CheckToken.MyUserAuthenticationConverter;
 import com.example.security_oauth2.MyAbstractTokenGranter.MyTokenGranter;
+import com.example.security_oauth2.TokenStoreConfig.MyAuthenticationKeyGenerator;
 import com.example.security_oauth2.UserDetailService.MyUserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
@@ -12,9 +16,14 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.CompositeTokenGranter;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.TokenGranter;
 import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.DefaultAuthenticationKeyGenerator;
+import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
+import org.springframework.security.oauth2.provider.token.store.redis.RedisTokenStore;
+import sun.security.util.SecurityConstants;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,6 +56,9 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
     @Autowired
     private MyUserDetailService myUserDetailService;
+
+    @Autowired
+    private RedisConnectionFactory redisConnectionFactory;
 
 //    @Autowired
 //    private RedisTemplate<String,String> redisTemplate;
@@ -137,6 +149,36 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
         granters.add(myTokenGranter);
         // 返回所有类型
         return new CompositeTokenGranter(granters);
+    }
+
+    /**
+     *  TokenStore 是一个用于存储和管理令牌（token）的组件或系统。
+     *  它通常被用于身份验证和授权的过程中。
+     *  TokenStore 可以将令牌存储在内存中、数据库中或其他持久化存储介质中，
+     *  并为应用程序提供相关的操作接口，如创建令牌、验证令牌、刷新令牌等。
+     *  下面是将token存在redis的配置
+     */
+    @Bean
+    public TokenStore tokenStore() {
+        //创建redisTokenStore对象
+        RedisTokenStore tokenStore = new RedisTokenStore(redisConnectionFactory);
+        //设置token在redis中的前缀(xxx:xxx)可实现文件夹格式
+        tokenStore.setPrefix("前缀");
+
+        //设置token的生成规则,默认使用DefaultAuthenticationKeyGenerator
+        //DefaultAuthenticationKeyGenerator根据client_id,scope,username组成个Map进而生成一个key
+        //RedisTokenStore根据生成的key转换成byte[]生成token
+        //这样会造成当username的值相同是,任何登录方式生成的token都一样,如果想实现token值也不一样
+        //需要自定义一个类继承DefaultAuthenticationKeyGenerator进行扩展,可以将认证类型也加入到Map中
+        //将自定义的类加入到配置中
+        tokenStore.setAuthenticationKeyGenerator(new MyAuthenticationKeyGenerator() {
+            //这里使用匿名内部类,重写extractKey方法,对自定义生成的key再进行扩展
+            @Override
+            public String extractKey(OAuth2Authentication authentication) {
+                return super.extractKey(authentication)+"对自定义生成的key再进行扩展";
+            }
+        });
+        return tokenStore;
     }
 
 
