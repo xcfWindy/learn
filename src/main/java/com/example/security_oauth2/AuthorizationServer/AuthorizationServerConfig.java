@@ -6,6 +6,7 @@ import com.example.security_oauth2.MyAbstractTokenGranter.MyTokenGranter;
 import com.example.security_oauth2.MyAuthentication.MyGranter;
 import com.example.security_oauth2.TokenStoreConfig.MyAuthenticationKeyGenerator;
 import com.example.security_oauth2.UserDetailService.MyUserDetailService;
+import com.example.security_oauth2.exception.MyWebResponseExceptionTranslator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +17,7 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.A
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.ClientDetailsService;
 import org.springframework.security.oauth2.provider.CompositeTokenGranter;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.TokenGranter;
@@ -60,6 +62,9 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
     @Autowired
     private RedisConnectionFactory redisConnectionFactory;
+
+    @Autowired
+    private ClientDetailsService clientDetailsService;
 
 //    @Autowired
 //    private RedisTemplate<String,String> redisTemplate;
@@ -122,13 +127,17 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
         DefaultAccessTokenConverter defaultAccessTokenConverter=new DefaultAccessTokenConverter();
         defaultAccessTokenConverter.setUserTokenConverter(new MyUserAuthenticationConverter());
         endpoints
-                //密码模式需要配置注入的authenticationManager，后续深入在解释为什么需要注入这个
+                //默认除密码模式外，所有授权模式均支持，密码模式需要显示注入authenticationManager开启
                 .authenticationManager(authenticationManager)
 //                .accessTokenConverter(defaultAccessTokenConverter)
                 //将自定义的认证模式加入到配置中
                 .tokenGranter(tokenGranter(endpoints))
                 //token，这里目前我们简单使用内存的方式
-                .tokenStore(new InMemoryTokenStore());
+                .tokenStore(new InMemoryTokenStore())
+                //扩展checkToken返回结果
+                .accessTokenConverter(defaultAccessTokenConverter)
+                //自定义异常解析
+                .exceptionTranslator(new MyWebResponseExceptionTranslator());
     }
 
     /**
